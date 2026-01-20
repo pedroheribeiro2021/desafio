@@ -2,57 +2,57 @@
 <html lang="pt-br">
   <head>
     <meta charset="UTF-8" />
-    <title>Email AI Classifier</title>
+    <title>Classificador de Emails</title>
     <style>
       body {
-        font-family: Arial, sans-serif;
+        font-family: Arial;
         margin: 40px;
       }
-
       textarea {
         width: 100%;
-        padding: 10px;
+        height: 150px;
       }
-
       button {
         padding: 10px 20px;
         margin-top: 10px;
-        cursor: pointer;
       }
-
       .result {
-        margin-top: 30px;
-        padding: 20px;
+        margin-top: 20px;
+        padding: 15px;
         border: 1px solid #ccc;
       }
     </style>
   </head>
   <body>
-    <h1>📧 Classificador Inteligente de Emails</h1>
+    <h2>Classificação Automática de Emails</h2>
 
-    <form method="post" action="/analyze" enctype="multipart/form-data">
-      <label><strong>Texto do email</strong> (opcional)</label><br />
+    <form action="/analyze" method="post" enctype="multipart/form-data">
+      <label>Email (cole o texto):</label><br />
       <textarea
         name="email_text"
-        rows="10"
-        placeholder="Cole o conteúdo do email aqui"
-      ></textarea>
+        rows="8"
+        cols="80"
+        placeholder="Cole aqui o conteúdo do email..."
+      >
+{{ email_text or "" }}</textarea
+      >
+
       <br /><br />
 
-      <label><strong>Ou envie um arquivo (.txt ou .pdf)</strong></label
-      ><br />
+      <label>Ou envie um arquivo (.txt ou .pdf):</label><br />
       <input type="file" name="file" accept=".txt,.pdf" />
-      <br /><br />
 
-      <button type="submit">Analisar Email</button>
+      <br /><br />
+      <button type="submit">Analisar</button>
     </form>
 
-    {% if category %}
-    <div class="result">
-      <h2>Categoria: {{ category }}</h2>
-      <h3>Resposta sugerida:</h3>
-      <p>{{ reply }}</p>
-    </div>
+    {% if error %}
+    <p style="color: red">{{ error }}</p>
+    {% endif %} {% if category %}
+    <hr />
+    <p><strong>Classificação:</strong> {{ category }}</p>
+    <p><strong>Resposta sugerida:</strong></p>
+    <p>{{ reply }}</p>
     {% endif %}
   </body>
 </html>
