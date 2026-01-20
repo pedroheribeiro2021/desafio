@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Email AI Classifier</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 40px;
+      }
+
+      textarea {
+        width: 100%;
+        padding: 10px;
+      }
+
+      button {
+        padding: 10px 20px;
+        margin-top: 10px;
+        cursor: pointer;
+      }
+
+      .result {
+        margin-top: 30px;
+        padding: 20px;
+        border: 1px solid #ccc;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>📧 Classificador Inteligente de Emails</h1>
+
+    <form method="post" action="/analyze" enctype="multipart/form-data">
+      <label><strong>Texto do email</strong> (opcional)</label><br />
+      <textarea
+        name="email_text"
+        rows="10"
+        placeholder="Cole o conteúdo do email aqui"
+      ></textarea>
+      <br /><br />
+
+      <label><strong>Ou envie um arquivo (.txt ou .pdf)</strong></label
+      ><br />
+      <input type="file" name="file" accept=".txt,.pdf" />
+      <br /><br />
+
+      <button type="submit">Analisar Email</button>
+    </form>
+
+    {% if category %}
+    <div class="result">
+      <h2>Categoria: {{ category }}</h2>
+      <h3>Resposta sugerida:</h3>
+      <p>{{ reply }}</p>
+    </div>
+    {% endif %}
+  </body>
+</html>
