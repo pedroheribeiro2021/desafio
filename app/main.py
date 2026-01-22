@@ -1,9 +1,13 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from fastapi import FastAPI, Request, UploadFile, Form
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
-from app.file_reader import read_pdf, read_txt
-from app.classifier import classify_email, generate_reply, summarize_email
+from file_reader import read_pdf, read_txt
+from classifier import classify_email, generate_reply, summarize_email
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -25,10 +29,10 @@ async def analyze(
         filename = file.filename.lower()
 
         if filename.endswith(".txt"):
-            text = read_txt(file)
+            text = read_txt(file)  
 
         elif filename.endswith(".pdf"):
-            text = read_pdf(file)
+            text = read_pdf(file)  
 
         else:
             return JSONResponse(
@@ -45,8 +49,16 @@ async def analyze(
             content={"error": "O email não pode estar vazio"}
         )
 
+    print(f"[DEBUG] Texto recebido ({len(text)} chars): {text[:200]}...")
+    
+    if len(text.strip()) < 20:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "O email é muito curto para análise"}
+        )
+
     category = classify_email(text)
-    response = generate_reply(category)
+    response = generate_reply(category, text)  
     summary = summarize_email(text)
 
     return {
