@@ -21,7 +21,6 @@ async def analyze(
 ):
     text = ""
 
-    # ✅ SÓ entra aqui se REALMENTE tiver arquivo
     if file and file.filename:
         filename = file.filename.lower()
 
@@ -38,7 +37,6 @@ async def analyze(
             )
 
     else:
-        # ✅ texto digitado
         text = email_text.strip()
 
     if not text:
