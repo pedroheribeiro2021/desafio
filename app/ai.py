@@ -1,9 +1,15 @@
 from transformers import pipeline
 
-# Modelo 100% gratuito, roda local
+# 🔹 Classificador zero-shot (local)
 classifier = pipeline(
     "zero-shot-classification",
     model="facebook/bart-large-mnli"
+)
+
+# 🔹 Summarizador local (leve e gratuito)
+summarizer = pipeline(
+    "summarization",
+    model="sshleifer/distilbart-cnn-12-6"
 )
 
 PROMO_KEYWORDS = [
@@ -11,29 +17,20 @@ PROMO_KEYWORDS = [
     "clique", "marketing", "publicidade"
 ]
 
+
 def classify_email(text: str) -> str:
-    # Regra de negócio primeiro (híbrido)
     lower_text = text.lower()
+
+    # 🚦 Regra de negócio explícita (anti-spam)
     if any(word in lower_text for word in PROMO_KEYWORDS):
         return "Improdutivo"
 
     labels = [
         "Email que exige ação ou resposta da equipe",
-        "Email informativo, promocional ou cordial sem necessidade de ação"
+        "Email informativo ou cordial sem necessidade de ação"
     ]
 
-    prompt = f"""
-    Considere o seguinte email recebido por uma empresa do setor financeiro.
-
-    Classifique como:
-    - Produtivo: exige resposta, ação ou acompanhamento.
-    - Improdutivo: apenas informativo, promocional ou cordial.
-
-    Email:
-    {text}
-    """
-
-    result = classifier(prompt, labels)
+    result = classifier(text, labels)
 
     label = result["labels"][0]
     score = result["scores"][0]
@@ -48,12 +45,26 @@ def classify_email(text: str) -> str:
     return "Improdutivo"
 
 
+def summarize_email(text: str) -> str:
+    # Proteção para textos muito longos
+    text = text[:2000]
+
+    result = summarizer(
+        text,
+        max_length=30,
+        min_length=10,
+        do_sample=False
+    )
+
+    return result[0]["summary_text"]
+
+
 def generate_reply(category: str) -> str:
     if category == "Produtivo":
         return (
             "Olá,\n\n"
-            "Recebemos sua mensagem e ela foi encaminhada para análise da nossa equipe. "
-            "Retornaremos o mais breve possível.\n\n"
+            "Recebemos sua solicitação e ela foi encaminhada para análise da nossa equipe. "
+            "Em breve retornaremos com mais informações.\n\n"
             "Atenciosamente,\nEquipe"
         )
     else:

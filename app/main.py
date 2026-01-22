@@ -1,76 +1,58 @@
 from fastapi import FastAPI, Request, UploadFile, Form
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
-from app.file_reader import read_txt, read_pdf
-from app.preprocess import preprocess_text
-from app.ai import classify_email, generate_reply
+from app.file_reader import read_pdf, read_txt
+from app.classifier import classify_email, generate_reply, summarize_email
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
+
 @app.get("/", response_class=HTMLResponse)
-def home(request: Request):
+async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-@app.post("/analyze", response_class=HTMLResponse)
+
+@app.post("/analyze")
 async def analyze(
-    request: Request,
     email_text: str = Form(default=""),
     file: UploadFile | None = None
 ):
     text = ""
 
-    # PRIORIDADE 1: TEXTO COLADO
-    if email_text.strip():
-        text = email_text
-
-    # PRIORIDADE 2: ARQUIVO
-    elif file and file.filename:
+    # ✅ SÓ entra aqui se REALMENTE tiver arquivo
+    if file and file.filename:
         filename = file.filename.lower()
-
-        if not (filename.endswith(".txt") or filename.endswith(".pdf")):
-            return templates.TemplateResponse(
-                "index.html",
-                {
-                    "request": request,
-                    "error": "Formato inválido. Envie apenas .txt ou .pdf"
-                }
-            )
 
         if filename.endswith(".txt"):
             text = read_txt(file)
-        else:
+
+        elif filename.endswith(".pdf"):
             text = read_pdf(file)
 
-        if not text.strip():
-            return templates.TemplateResponse(
-                "index.html",
-                {
-                    "request": request,
-                    "error": "Não foi possível extrair texto do arquivo enviado."
-                }
+        else:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Formato de arquivo não suportado. Use .txt ou .pdf"}
             )
 
     else:
-        return templates.TemplateResponse(
-            "index.html",
-            {
-                "request": request,
-                "error": "Informe um texto ou envie um arquivo."
-            }
+        # ✅ texto digitado
+        text = email_text.strip()
+
+    if not text:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "O email não pode estar vazio"}
         )
 
-    clean_text = preprocess_text(text)
-    category = classify_email(clean_text)
-    reply = generate_reply(category)
+    category = classify_email(text)
+    response = generate_reply(category)
+    summary = summarize_email(text)
 
-    return templates.TemplateResponse(
-        "index.html",
-        {
-            "request": request,
-            "category": category,
-            "reply": reply,
-            "email_text": text
-        }
-    )
+    return {
+        "category": category,
+        "summary": summary,
+        "response": response
+    }

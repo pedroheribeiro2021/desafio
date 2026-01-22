@@ -1,58 +1,206 @@
 <!doctype html>
-<html lang="pt-br">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <title>Classificador de Emails</title>
+    <title>Analisador de Emails</title>
     <style>
       body {
-        font-family: Arial;
-        margin: 40px;
+        font-family: Inter, Arial, sans-serif;
+        background: linear-gradient(135deg, #0f172a, #1e293b);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
       }
-      textarea {
+
+      .card {
+        background: #020617;
+        padding: 32px;
+        border-radius: 16px;
+        width: 420px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      }
+
+      h1 {
+        font-size: 22px;
+        margin-bottom: 16px;
+        text-align: center;
+      }
+
+      textarea,
+      input[type="file"] {
         width: 100%;
-        height: 150px;
+        margin-bottom: 12px;
       }
+
+      textarea {
+        height: 120px;
+        border-radius: 8px;
+        padding: 10px;
+        border: none;
+        resize: none;
+      }
+
       button {
-        padding: 10px 20px;
-        margin-top: 10px;
+        width: 100%;
+        padding: 12px;
+        border: none;
+        border-radius: 10px;
+        background: #6366f1;
+        color: #fff;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 15px;
       }
-      .result {
-        margin-top: 20px;
-        padding: 15px;
-        border: 1px solid #ccc;
+
+      button:hover {
+        background: #4f46e5;
+      }
+
+      .loading {
+        text-align: center;
+        display: none;
+        margin-top: 12px;
+        font-size: 14px;
+        opacity: 0.8;
+      }
+
+      /* MODAL */
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: none;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .modal-content {
+        background: #020617;
+        padding: 24px;
+        border-radius: 16px;
+        width: 380px;
+        text-align: center;
+      }
+
+      .badge {
+        padding: 6px 12px;
+        border-radius: 999px;
+        display: inline-block;
+        margin-bottom: 12px;
+        font-size: 14px;
+      }
+
+      .Produtivo {
+        background: #16a34a;
+      }
+
+      .Improdutivo {
+        background: #dc2626;
+      }
+
+      .secondary {
+        margin-top: 12px;
+        background: #1e293b;
+      }
+      .toast {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #dc2626;
+        color: #fff;
+        padding: 14px 20px;
+        border-radius: 10px;
+        font-weight: 500;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        display: none;
+        z-index: 9999;
       }
     </style>
   </head>
+  <div id="toast" class="toast"></div>
+
   <body>
-    <h2>Classificação Automática de Emails</h2>
+    <div class="card">
+      <h1>📧 Analisador de Emails</h1>
 
-    <form action="/analyze" method="post" enctype="multipart/form-data">
-      <label>Email (cole o texto):</label><br />
-      <textarea
-        name="email_text"
-        rows="8"
-        cols="80"
-        placeholder="Cole aqui o conteúdo do email..."
-      >
-{{ email_text or "" }}</textarea
-      >
+      <form id="form">
+        <textarea
+          name="email_text"
+          placeholder="Cole o texto do email aqui..."
+        ></textarea>
+        <input type="file" name="file" accept=".txt,.pdf" />
+        <button type="submit">Analisar Email</button>
+      </form>
 
-      <br /><br />
+      <div class="loading" id="loading">⏳ Analisando email...</div>
+    </div>
 
-      <label>Ou envie um arquivo (.txt ou .pdf):</label><br />
-      <input type="file" name="file" accept=".txt,.pdf" />
+    <!-- MODAL -->
+    <div class="modal" id="modal">
+      <div class="modal-content">
+        <div id="badge" class="badge"></div>
+        <p id="summary"></p>
+        <hr style="opacity: 0.2; margin: 16px 0" />
+        <p><strong>Resposta sugerida:</strong></p>
+        <p id="response"></p>
+        <button class="secondary" onclick="resetApp()">
+          Analisar outro email
+        </button>
+      </div>
+    </div>
 
-      <br /><br />
-      <button type="submit">Analisar</button>
-    </form>
+    <script>
+      const form = document.getElementById("form");
+      const loading = document.getElementById("loading");
+      const modal = document.getElementById("modal");
 
-    {% if error %}
-    <p style="color: red">{{ error }}</p>
-    {% endif %} {% if category %}
-    <hr />
-    <p><strong>Classificação:</strong> {{ category }}</p>
-    <p><strong>Resposta sugerida:</strong></p>
-    <p>{{ reply }}</p>
-    {% endif %}
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        loading.style.display = "block";
+
+        const formData = new FormData(form);
+
+        const res = await fetch("/analyze", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          showToast(err.error || "Erro ao analisar email");
+          loading.style.display = "none";
+          return;
+        }
+
+        const data = await res.json();
+
+        document.getElementById("badge").innerText = data.category;
+        document.getElementById("badge").className = "badge " + data.category;
+        document.getElementById("summary").innerText = data.summary;
+        document.getElementById("response").innerText = data.response;
+
+        loading.style.display = "none";
+        modal.style.display = "flex";
+        form.reset();
+      });
+
+      function showToast(message) {
+        const toast = document.getElementById("toast");
+        toast.innerText = message;
+        toast.style.display = "block";
+
+        setTimeout(() => {
+          toast.style.display = "none";
+        }, 4000);
+      }
+
+      function resetApp() {
+        modal.style.display = "none";
+      }
+    </script>
   </body>
 </html>
