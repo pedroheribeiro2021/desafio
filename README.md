@@ -3,6 +3,8 @@
 ## 🎯 Sobre o Projeto
 Solução web completa para automatizar a leitura e classificação de emails em ambiente corporativo financeiro. O sistema utiliza Processamento de Linguagem Natural (NLP) para classificar emails como **Produtivo** ou **Improdutivo** e gerar respostas automáticas contextualizadas.
 
+Link do deploy: https://desafio-9inn.onrender.com/
+
 ## ✨ Funcionalidades Principais
 - **📤 Upload flexível**: Texto direto ou arquivos (.txt, .pdf)
 - **🤖 Classificação inteligente**: NLP com tokenização, stopwords e stemming em português
